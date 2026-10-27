@@ -1,0 +1,38 @@
+name: fittrack
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fit_track
+      MYSQL_USER: fittrack
+      MYSQL_PASSWORD: fittrack
+    ports:
+      - "3307:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      - ../Database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ../Database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      retries: 20
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_NAME: fit_track
+      DB_USER: fittrack
+      DB_PASSWORD: fittrack
+      TOKEN_SECRET: 8f3c1e9a7b2d4f6e0a5c9d1b3e7f2a4c6d8e0b1a3c5d7e9f
+    volumes:
+      - ./:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
